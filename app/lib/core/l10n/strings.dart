@@ -1,0 +1,217 @@
+import 'package:flutter/widgets.dart';
+
+/// Lightweight localisation: English + Urdu (RTL). Add a language by adding a map below and a Locale in
+/// [supportedLocales]; keys missing from a language fall back to English, so partial translations are safe.
+class S {
+  S(this.locale);
+  final Locale locale;
+
+  static const supportedLocales = [Locale('en'), Locale('ur')];
+
+  static S of(BuildContext context) => Localizations.of<S>(context, S) ?? S(const Locale('en'));
+
+  bool get isUrdu => locale.languageCode == 'ur';
+
+  String t(String key, [Map<String, Object?> args = const {}]) {
+    var s = _strings[locale.languageCode]?[key] ?? _strings['en']![key] ?? key;
+    args.forEach((k, v) => s = s.replaceAll('{$k}', '${v ?? ''}'));
+    return s;
+  }
+
+  static const delegate = _SDelegate();
+
+  static const Map<String, Map<String, String>> _strings = {
+    'en': {
+      'app.name': 'Mauqa',
+      'app.tagline': 'Discover. Qualify. Track. Apply.',
+      'nav.home': 'Home', 'nav.explore': 'Explore', 'nav.saved': 'Saved', 'nav.journey': 'My Journey', 'nav.profile': 'Profile',
+      'common.retry': 'Try again', 'common.save': 'Save', 'common.cancel': 'Cancel', 'common.delete': 'Delete', 'common.edit': 'Edit',
+      'common.add': 'Add', 'common.close': 'Close', 'common.done': 'Done', 'common.seeAll': 'See all', 'common.search': 'Search',
+      'common.loading': 'Loading…', 'common.error': 'Something went wrong', 'common.offline': 'You are offline — showing saved copy',
+      'common.required': 'Required', 'common.optional': 'Optional', 'common.continue': 'Continue', 'common.confirm': 'Confirm',
+      'common.saved': 'Saved', 'common.removed': 'Removed', 'common.none': 'Nothing here yet', 'common.daysLeft': '{n} days left',
+      'common.closesToday': 'Closes today', 'common.closed': 'Closed', 'common.opensSoon': 'Opens soon', 'common.noDeadline': 'No fixed deadline',
+      'auth.welcomeTitle': 'Every opportunity,\none place.', 'auth.welcomeBody': 'Scholarships, internships, jobs and government schemes — checked against official sources.',
+      'auth.getStarted': 'Get started', 'auth.haveAccount': 'I already have an account', 'auth.login': 'Log in', 'auth.signup': 'Create account',
+      'auth.email': 'Email', 'auth.phone': 'Phone number', 'auth.password': 'Password', 'auth.confirmPassword': 'Confirm password',
+      'auth.fullName': 'Full name', 'auth.forgot': 'Forgot password?', 'auth.resetSent': 'If an account exists, a reset link has been sent.',
+      'auth.useEmail': 'Email', 'auth.usePhone': 'Phone', 'auth.otpTitle': 'Enter the code', 'auth.otpBody': 'We sent a 6-digit code to {phone}.',
+      'auth.verify': 'Verify', 'auth.google': 'Continue with Google', 'auth.acceptTerms': 'I agree to the Terms and Privacy Policy',
+      'auth.checkEmail': 'Check your email to verify your account, then log in.', 'auth.newPassword': 'New password',
+      'auth.setPassword': 'Set new password', 'auth.passwordUpdated': 'Password updated', 'auth.notConfigured': 'Backend not configured. Run with --dart-define-from-file=env/dev.json',
+      'home.greeting': 'Assalam-o-Alaikum, {name}', 'home.greetingNoName': 'Assalam-o-Alaikum!', 'home.completeProfile': 'Complete your profile for better matches',
+      'home.forYou': 'Recommended for you', 'home.closingSoon': 'Closing soon', 'home.trending': 'Trending', 'home.featured': 'Featured',
+      'home.newThisWeek': 'New this week', 'home.recent': 'Recently added', 'home.scholarships': 'Scholarship highlights',
+      'home.internships': 'Internship highlights', 'home.schemes': 'Government schemes', 'home.progress': 'Your applications',
+      'home.weekly': 'This week', 'home.searchHint': 'Search scholarships, jobs, schemes…', 'home.upcoming': 'Upcoming deadlines',
+      'home.interested': 'Interested', 'home.saved': 'Saved', 'home.notifications': 'Notifications',
+      'explore.title': 'Explore', 'explore.filters': 'Filters', 'explore.clear': 'Clear filters', 'explore.results': '{n} opportunities',
+      'explore.sort': 'Sort', 'sort.relevance': 'Relevance', 'sort.latest': 'Latest', 'sort.deadline': 'Deadline', 'sort.popularity': 'Popular',
+      'explore.history': 'Recent searches', 'explore.suggested': 'Suggested', 'explore.categories': 'Categories', 'explore.noResults': 'No opportunities match these filters.',
+      'opp.apply': 'Apply officially', 'opp.interested': 'Interested', 'opp.markInterested': 'Mark as interested', 'opp.save': 'Save',
+      'opp.check': 'Check eligibility', 'opp.compare': 'Compare', 'opp.share': 'Share', 'opp.report': 'Report', 'opp.suggestCorrection': 'Suggest a correction',
+      'opp.about': 'About', 'opp.benefits': 'Benefits', 'opp.eligibility': 'Eligibility', 'opp.documents': 'Required documents',
+      'opp.procedure': 'How to apply', 'opp.selection': 'Selection process', 'opp.instructions': 'Important instructions', 'opp.dates': 'Key dates',
+      'opp.source': 'Official source', 'opp.lastChecked': 'Last checked {date}', 'opp.lastVerified': 'Last verified {date}',
+      'opp.opening': 'Opens', 'opp.deadline': 'Deadline', 'opp.funding': 'Funding', 'opp.location': 'Location', 'opp.duration': 'Duration',
+      'opp.leaving': 'You are leaving Mauqa', 'opp.leavingBody': 'This opens {host}, the application page listed for {org}. Never share your portal password with anyone, including Mauqa.',
+      'opp.open': 'Open website', 'opp.didApply': 'Did you submit your application?', 'opp.didApplyBody': 'Mauqa only records it when you confirm.',
+      'opp.yesApplied': 'Yes, I applied', 'opp.notYet': 'Not yet', 'opp.feeWarning': 'This listing mentions an application fee of {fee}. Genuine programmes rarely charge fees — confirm on the official website before paying anything.',
+      'opp.demo': 'DEMO record for testing — not a real opportunity.', 'opp.reportedBanner': 'Reported for review — our team is checking this listing.',
+      'opp.unverifiedBanner': 'Not yet verified against the official source. Check the official website before applying.',
+      'opp.noApplyLink': 'No official application link yet', 'opp.linkCaution': 'Check this link carefully',
+      'verify.verified': 'Verified official source', 'verify.pending': 'Pending verification', 'verify.unverified': 'Unverified',
+      'verify.rejected': 'Rejected', 'verify.expired': 'Expired', 'verify.reported': 'Reported for review',
+      'elig.title': 'Eligibility check', 'elig.eligible': 'Eligible', 'elig.probably': 'Probably eligible — unconfirmed', 'elig.not': 'Not eligible',
+      'elig.matched': 'Requirements you meet', 'elig.failed': 'Why you don’t qualify', 'elig.unconfirmed': 'Could not be confirmed',
+      'elig.missing': 'Still needed', 'elig.updateProfile': 'Update profile', 'elig.recheck': 'Check again', 'elig.disclaimer': 'This check uses the structured criteria we have and your profile. The official announcement is always the final authority.',
+      'saved.title': 'Saved & Interested', 'saved.saved': 'Saved', 'saved.interested': 'Interested', 'saved.moveToSaved': 'Move to Saved',
+      'saved.remove': 'Remove', 'saved.reminders': 'Deadline reminders', 'saved.emptySaved': 'Save opportunities to read later.',
+      'saved.emptyInterested': 'Mark opportunities as Interested to get deadline reminders.', 'saved.filterHint': 'Search your list',
+      'remind.title': 'Remind me', 'remind.offer': 'Get reminders before the deadline?', 'remind.7': '7 days before', 'remind.3': '3 days before',
+      'remind.1': '1 day before', 'remind.0': 'On deadline day', 'remind.14': '14 days before', 'remind.custom': 'Add custom reminder',
+      'remind.enable': 'Reminders on', 'remind.saved': 'Reminders updated',
+      'journey.title': 'My Journey', 'journey.add': 'Add application', 'journey.empty': 'Track every application from planning to selection.',
+      'journey.status': 'Status', 'journey.notes': 'Notes', 'journey.timeline': 'Timeline', 'journey.interview': 'Interview date',
+      'journey.followUp': 'Follow-up date', 'journey.appliedOn': 'Applied on', 'journey.reference': 'Reference number', 'journey.titleField': 'Opportunity title',
+      'journey.org': 'Organisation', 'journey.deleteConfirm': 'Delete this application record?',
+      'status.interested': 'Interested', 'status.planning': 'Planning to apply', 'status.preparing_documents': 'Preparing documents',
+      'status.applied': 'Applied', 'status.under_review': 'Under review', 'status.shortlisted': 'Shortlisted', 'status.interview_scheduled': 'Interview scheduled',
+      'status.selected': 'Selected', 'status.rejected': 'Not selected', 'status.withdrawn': 'Withdrawn',
+      'profile.title': 'Profile', 'profile.edit': 'Edit profile', 'profile.completion': 'Profile {n}% complete', 'profile.personal': 'Personal information',
+      'profile.education': 'Education', 'profile.skills': 'Skills', 'profile.interests': 'Interests', 'profile.experience': 'Experience',
+      'profile.certifications': 'Certifications', 'profile.optional': 'Optional eligibility information', 'profile.sensitiveNote': 'Optional. Used only for eligibility checks you run, and only if you allow it below.',
+      'profile.shareSensitive': 'Use my income/disability info for eligibility checks', 'profile.category': 'I am a…', 'profile.languages': 'Languages',
+      'profile.dob': 'Date of birth', 'profile.gender': 'Gender (optional)', 'profile.cnic': 'CNIC (optional)', 'profile.province': 'Province',
+      'profile.city': 'City', 'profile.address': 'Address (optional)', 'profile.employment': 'Employment status', 'profile.income': 'Household income range',
+      'profile.disability': 'I have a disability', 'profile.addEducation': 'Add education', 'profile.addSkill': 'Add a skill', 'profile.addInterest': 'Add an interest',
+      'profile.addExperience': 'Add experience', 'profile.addCertification': 'Add certification', 'profile.photo': 'Change photo',
+      'profile.documents': 'Documents', 'profile.calendar': 'Calendar', 'profile.tools': 'CV & application tools', 'profile.community': 'Community',
+      'profile.settings': 'Settings', 'profile.logout': 'Log out', 'profile.compare': 'Comparisons', 'profile.recsUpdated': 'Profile saved — recommendations refreshed',
+      'docs.title': 'Document vault', 'docs.upload': 'Upload document', 'docs.empty': 'Keep your CNIC, transcripts and CV safe in one private place.',
+      'docs.private': 'Private — only you can open these files.', 'docs.expiry': 'Expiry date (optional)', 'docs.replace': 'Replace', 'docs.download': 'Open',
+      'docs.completeness': '{n} of {total} common documents uploaded', 'docs.tooLarge': 'File is larger than 10 MB', 'docs.badType': 'Use PDF, JPG, PNG, WEBP or Word files',
+      'cal.title': 'Calendar', 'cal.month': 'Month', 'cal.week': 'Week', 'cal.day': 'Day', 'cal.empty': 'No deadlines or reminders on this day.',
+      'notif.title': 'Notifications', 'notif.markAll': 'Mark all as read', 'notif.empty': 'You’re all caught up.', 'notif.prefs': 'Notification preferences',
+      'notif.push': 'Push notifications', 'notif.email': 'Email', 'notif.sms': 'SMS', 'notif.whatsapp': 'WhatsApp', 'notif.channelsNote': 'SMS and WhatsApp work only once the service has been configured by the Mauqa team.',
+      'compare.title': 'Compare', 'compare.empty': 'Add 2–4 opportunities to compare them side by side.', 'compare.added': 'Added to comparison',
+      'compare.full': 'You can compare up to 4 at a time', 'compare.save': 'Save comparison', 'compare.clear': 'Clear',
+      'tools.title': 'Tools', 'tools.cv': 'CV builder', 'tools.cover': 'Cover letters', 'tools.guides': 'Guides', 'tools.interview': 'Interview practice',
+      'tools.readiness': 'Application readiness', 'tools.exportPdf': 'Export PDF', 'tools.checklist': 'Application checklist',
+      'settings.title': 'Settings', 'settings.language': 'Language', 'settings.theme': 'Theme', 'settings.themeSystem': 'System', 'settings.themeLight': 'Light',
+      'settings.themeDark': 'Dark', 'settings.textSize': 'Text size', 'settings.highContrast': 'High contrast', 'settings.simpleMode': 'Simple mode',
+      'settings.lowData': 'Low-data mode', 'settings.reduceMotion': 'Reduce motion', 'settings.privacy': 'Privacy', 'settings.downloadData': 'Download my data',
+      'settings.deleteAccount': 'Delete account', 'settings.deleteConfirm': 'This permanently deletes your account, documents and history. Type DELETE to confirm.',
+      'settings.changePassword': 'Change password', 'settings.terms': 'Terms & conditions', 'settings.privacyPolicy': 'Privacy policy', 'settings.help': 'Help & support',
+      'settings.feedback': 'Send feedback', 'settings.reportIssue': 'Report a technical issue', 'settings.about': 'About Mauqa', 'settings.version': 'Version {v}',
+      'settings.accessibility': 'Accessibility', 'settings.recPrefs': 'Recommendation preferences', 'settings.verifiedOnly': 'Only show verified listings',
+      'settings.hideDemo': 'Hide demo listings',
+      'report.title': 'Report this opportunity', 'report.sent': 'Thank you. Our team will review this listing.', 'report.details': 'What did you notice?',
+      'community.title': 'Community', 'community.stories': 'Success stories', 'community.share': 'Share your story', 'community.mentors': 'Mentors',
+      'community.pending': 'Submitted — it will appear after review.', 'community.reportStory': 'Report story',
+    },
+    'ur': {
+      'app.name': 'موقع',
+      'app.tagline': 'تلاش کریں۔ اہلیت جانیں۔ پیش رفت دیکھیں۔ درخواست دیں۔',
+      'nav.home': 'ہوم', 'nav.explore': 'تلاش', 'nav.saved': 'محفوظ', 'nav.journey': 'میرا سفر', 'nav.profile': 'پروفائل',
+      'common.retry': 'دوبارہ کوشش کریں', 'common.save': 'محفوظ کریں', 'common.cancel': 'منسوخ', 'common.delete': 'حذف کریں', 'common.edit': 'ترمیم',
+      'common.add': 'شامل کریں', 'common.close': 'بند کریں', 'common.done': 'مکمل', 'common.seeAll': 'سب دیکھیں', 'common.search': 'تلاش',
+      'common.loading': 'لوڈ ہو رہا ہے…', 'common.error': 'کچھ غلط ہو گیا', 'common.offline': 'آپ آف لائن ہیں — محفوظ شدہ معلومات دکھائی جا رہی ہیں',
+      'common.required': 'لازمی', 'common.optional': 'اختیاری', 'common.continue': 'جاری رکھیں', 'common.confirm': 'تصدیق کریں',
+      'common.saved': 'محفوظ ہو گیا', 'common.removed': 'ہٹا دیا گیا', 'common.none': 'ابھی کچھ نہیں', 'common.daysLeft': '{n} دن باقی',
+      'common.closesToday': 'آج آخری دن', 'common.closed': 'بند', 'common.opensSoon': 'جلد کھلے گا', 'common.noDeadline': 'کوئی مقررہ آخری تاریخ نہیں',
+      'auth.welcomeTitle': 'ہر موقع،\nایک جگہ۔', 'auth.welcomeBody': 'وظائف، انٹرن شپس، ملازمتیں اور سرکاری اسکیمیں — سرکاری ذرائع سے تصدیق شدہ۔',
+      'auth.getStarted': 'شروع کریں', 'auth.haveAccount': 'میرا پہلے سے اکاؤنٹ ہے', 'auth.login': 'لاگ ان', 'auth.signup': 'اکاؤنٹ بنائیں',
+      'auth.email': 'ای میل', 'auth.phone': 'فون نمبر', 'auth.password': 'پاس ورڈ', 'auth.confirmPassword': 'پاس ورڈ کی تصدیق',
+      'auth.fullName': 'پورا نام', 'auth.forgot': 'پاس ورڈ بھول گئے؟', 'auth.resetSent': 'اگر اکاؤنٹ موجود ہے تو ری سیٹ لنک بھیج دیا گیا ہے۔',
+      'auth.useEmail': 'ای میل', 'auth.usePhone': 'فون', 'auth.otpTitle': 'کوڈ درج کریں', 'auth.otpBody': 'ہم نے {phone} پر 6 ہندسوں کا کوڈ بھیجا ہے۔',
+      'auth.verify': 'تصدیق کریں', 'auth.google': 'گوگل کے ساتھ جاری رکھیں', 'auth.acceptTerms': 'میں شرائط اور پرائیویسی پالیسی سے متفق ہوں',
+      'auth.checkEmail': 'اکاؤنٹ کی تصدیق کے لیے اپنی ای میل دیکھیں، پھر لاگ ان کریں۔', 'auth.newPassword': 'نیا پاس ورڈ',
+      'auth.setPassword': 'نیا پاس ورڈ مقرر کریں', 'auth.passwordUpdated': 'پاس ورڈ تبدیل ہو گیا',
+      'home.greeting': 'السلام علیکم، {name}', 'home.greetingNoName': 'السلام علیکم!', 'home.completeProfile': 'بہتر مواقع کے لیے اپنا پروفائل مکمل کریں',
+      'home.forYou': 'آپ کے لیے تجاویز', 'home.closingSoon': 'جلد بند ہونے والے', 'home.trending': 'مقبول', 'home.featured': 'نمایاں',
+      'home.newThisWeek': 'اس ہفتے نئے', 'home.recent': 'حال ہی میں شامل', 'home.scholarships': 'نمایاں وظائف', 'home.internships': 'نمایاں انٹرن شپس',
+      'home.schemes': 'سرکاری اسکیمیں', 'home.progress': 'آپ کی درخواستیں', 'home.weekly': 'اس ہفتے', 'home.searchHint': 'وظائف، ملازمتیں، اسکیمیں تلاش کریں…',
+      'home.upcoming': 'آنے والی آخری تاریخیں', 'home.interested': 'دلچسپی', 'home.saved': 'محفوظ', 'home.notifications': 'اطلاعات',
+      'explore.title': 'تلاش', 'explore.filters': 'فلٹرز', 'explore.clear': 'فلٹرز ختم کریں', 'explore.results': '{n} مواقع', 'explore.sort': 'ترتیب',
+      'sort.relevance': 'متعلقہ', 'sort.latest': 'تازہ ترین', 'sort.deadline': 'آخری تاریخ', 'sort.popularity': 'مقبول',
+      'explore.history': 'حالیہ تلاش', 'explore.suggested': 'تجویز کردہ', 'explore.categories': 'زمرے', 'explore.noResults': 'ان فلٹرز کے مطابق کوئی موقع نہیں ملا۔',
+      'opp.apply': 'سرکاری طور پر درخواست دیں', 'opp.interested': 'دلچسپی', 'opp.markInterested': 'دلچسپی ظاہر کریں', 'opp.save': 'محفوظ کریں',
+      'opp.check': 'اہلیت جانچیں', 'opp.compare': 'موازنہ', 'opp.share': 'شیئر', 'opp.report': 'رپورٹ', 'opp.suggestCorrection': 'تصحیح تجویز کریں',
+      'opp.about': 'تفصیل', 'opp.benefits': 'فوائد', 'opp.eligibility': 'اہلیت', 'opp.documents': 'درکار دستاویزات', 'opp.procedure': 'درخواست کا طریقہ',
+      'opp.selection': 'انتخاب کا طریقہ', 'opp.instructions': 'اہم ہدایات', 'opp.dates': 'اہم تاریخیں', 'opp.source': 'سرکاری ذریعہ',
+      'opp.lastChecked': 'آخری بار دیکھا گیا {date}', 'opp.lastVerified': 'آخری تصدیق {date}', 'opp.opening': 'آغاز', 'opp.deadline': 'آخری تاریخ',
+      'opp.funding': 'مالی معاونت', 'opp.location': 'مقام', 'opp.duration': 'دورانیہ', 'opp.leaving': 'آپ موقع سے باہر جا رہے ہیں',
+      'opp.leavingBody': 'یہ {host} کھولے گا، جو {org} کا درخواست صفحہ ہے۔ اپنا پورٹل پاس ورڈ کسی کو نہ بتائیں، موقع کو بھی نہیں۔',
+      'opp.open': 'ویب سائٹ کھولیں', 'opp.didApply': 'کیا آپ نے درخواست جمع کرا دی؟', 'opp.didApplyBody': 'موقع صرف آپ کی تصدیق پر ریکارڈ کرتا ہے۔',
+      'opp.yesApplied': 'جی، درخواست دے دی', 'opp.notYet': 'ابھی نہیں', 'opp.feeWarning': 'اس اعلان میں {fee} درخواست فیس کا ذکر ہے۔ اصل پروگرام شاذ و نادر فیس لیتے ہیں — ادائیگی سے پہلے سرکاری ویب سائٹ پر تصدیق کریں۔',
+      'opp.demo': 'ڈیمو ریکارڈ — یہ حقیقی موقع نہیں ہے۔', 'opp.reportedBanner': 'جائزے کے لیے رپورٹ شدہ — ہماری ٹیم جانچ کر رہی ہے۔',
+      'opp.unverifiedBanner': 'ابھی سرکاری ذریعہ سے تصدیق نہیں ہوئی۔ درخواست سے پہلے سرکاری ویب سائٹ دیکھیں۔', 'opp.noApplyLink': 'ابھی سرکاری درخواست لنک دستیاب نہیں',
+      'opp.linkCaution': 'اس لنک کو غور سے دیکھیں',
+      'verify.verified': 'تصدیق شدہ سرکاری ذریعہ', 'verify.pending': 'تصدیق زیر التوا', 'verify.unverified': 'غیر تصدیق شدہ', 'verify.rejected': 'مسترد',
+      'verify.expired': 'میعاد ختم', 'verify.reported': 'جائزے کے لیے رپورٹ شدہ',
+      'elig.title': 'اہلیت کی جانچ', 'elig.eligible': 'اہل', 'elig.probably': 'ممکنہ طور پر اہل — غیر مصدقہ', 'elig.not': 'اہل نہیں',
+      'elig.matched': 'پوری ہونے والی شرائط', 'elig.failed': 'آپ اہل کیوں نہیں', 'elig.unconfirmed': 'تصدیق نہیں ہو سکی', 'elig.missing': 'ابھی درکار',
+      'elig.updateProfile': 'پروفائل اپڈیٹ کریں', 'elig.recheck': 'دوبارہ جانچیں', 'elig.disclaimer': 'یہ جانچ دستیاب شرائط اور آپ کے پروفائل پر مبنی ہے۔ حتمی فیصلہ ہمیشہ سرکاری اعلان کا ہوتا ہے۔',
+      'saved.title': 'محفوظ اور دلچسپی', 'saved.saved': 'محفوظ', 'saved.interested': 'دلچسپی', 'saved.moveToSaved': 'محفوظ میں منتقل کریں',
+      'saved.remove': 'ہٹائیں', 'saved.reminders': 'آخری تاریخ کی یاد دہانیاں', 'saved.emptySaved': 'بعد میں پڑھنے کے لیے مواقع محفوظ کریں۔',
+      'saved.emptyInterested': 'یاد دہانیوں کے لیے مواقع پر دلچسپی ظاہر کریں۔', 'saved.filterHint': 'اپنی فہرست میں تلاش کریں',
+      'remind.title': 'یاد دلائیں', 'remind.offer': 'آخری تاریخ سے پہلے یاد دہانی چاہیے؟', 'remind.7': '7 دن پہلے', 'remind.3': '3 دن پہلے',
+      'remind.1': '1 دن پہلے', 'remind.0': 'آخری دن', 'remind.14': '14 دن پہلے', 'remind.custom': 'اپنی یاد دہانی شامل کریں', 'remind.enable': 'یاد دہانیاں آن',
+      'remind.saved': 'یاد دہانیاں اپڈیٹ ہو گئیں',
+      'journey.title': 'میرا سفر', 'journey.add': 'درخواست شامل کریں', 'journey.empty': 'منصوبہ بندی سے انتخاب تک ہر درخواست کا ریکارڈ رکھیں۔',
+      'journey.status': 'حیثیت', 'journey.notes': 'نوٹس', 'journey.timeline': 'ٹائم لائن', 'journey.interview': 'انٹرویو کی تاریخ', 'journey.followUp': 'فالو اپ کی تاریخ',
+      'journey.appliedOn': 'درخواست کی تاریخ', 'journey.reference': 'حوالہ نمبر', 'journey.titleField': 'موقع کا عنوان', 'journey.org': 'ادارہ',
+      'journey.deleteConfirm': 'یہ ریکارڈ حذف کریں؟',
+      'status.interested': 'دلچسپی', 'status.planning': 'درخواست کا ارادہ', 'status.preparing_documents': 'دستاویزات کی تیاری', 'status.applied': 'درخواست دے دی',
+      'status.under_review': 'زیر غور', 'status.shortlisted': 'شارٹ لسٹ', 'status.interview_scheduled': 'انٹرویو طے', 'status.selected': 'منتخب',
+      'status.rejected': 'منتخب نہیں ہوئے', 'status.withdrawn': 'واپس لے لی',
+      'profile.title': 'پروفائل', 'profile.edit': 'پروفائل میں ترمیم', 'profile.completion': 'پروفائل {n}% مکمل', 'profile.personal': 'ذاتی معلومات',
+      'profile.education': 'تعلیم', 'profile.skills': 'مہارتیں', 'profile.interests': 'دلچسپیاں', 'profile.experience': 'تجربہ', 'profile.certifications': 'سرٹیفیکیشنز',
+      'profile.optional': 'اختیاری اہلیت کی معلومات', 'profile.sensitiveNote': 'اختیاری۔ صرف آپ کی اجازت سے اہلیت کی جانچ میں استعمال ہوتی ہے۔',
+      'profile.shareSensitive': 'اہلیت کی جانچ میں میری آمدنی/معذوری کی معلومات استعمال کریں', 'profile.category': 'میں ہوں…', 'profile.languages': 'زبانیں',
+      'profile.dob': 'تاریخ پیدائش', 'profile.gender': 'جنس (اختیاری)', 'profile.cnic': 'شناختی کارڈ (اختیاری)', 'profile.province': 'صوبہ', 'profile.city': 'شہر',
+      'profile.address': 'پتہ (اختیاری)', 'profile.employment': 'روزگار کی حیثیت', 'profile.income': 'گھریلو آمدنی', 'profile.disability': 'میں معذوری کا شکار ہوں',
+      'profile.addEducation': 'تعلیم شامل کریں', 'profile.addSkill': 'مہارت شامل کریں', 'profile.addInterest': 'دلچسپی شامل کریں', 'profile.addExperience': 'تجربہ شامل کریں',
+      'profile.addCertification': 'سرٹیفیکیشن شامل کریں', 'profile.photo': 'تصویر تبدیل کریں', 'profile.documents': 'دستاویزات', 'profile.calendar': 'کیلنڈر',
+      'profile.tools': 'سی وی اور درخواست کے ٹولز', 'profile.community': 'کمیونٹی', 'profile.settings': 'سیٹنگز', 'profile.logout': 'لاگ آؤٹ', 'profile.compare': 'موازنے',
+      'profile.recsUpdated': 'پروفائل محفوظ — تجاویز اپڈیٹ ہو گئیں',
+      'docs.title': 'دستاویزات کا لاکر', 'docs.upload': 'دستاویز اپ لوڈ کریں', 'docs.empty': 'شناختی کارڈ، ٹرانسکرپٹ اور سی وی ایک محفوظ جگہ رکھیں۔',
+      'docs.private': 'نجی — یہ فائلیں صرف آپ کھول سکتے ہیں۔', 'docs.expiry': 'میعاد ختم ہونے کی تاریخ (اختیاری)', 'docs.replace': 'تبدیل کریں', 'docs.download': 'کھولیں',
+      'docs.completeness': '{total} میں سے {n} عام دستاویزات اپ لوڈ', 'docs.tooLarge': 'فائل 10 ایم بی سے بڑی ہے', 'docs.badType': 'PDF، JPG، PNG، WEBP یا ورڈ فائل استعمال کریں',
+      'cal.title': 'کیلنڈر', 'cal.month': 'مہینہ', 'cal.week': 'ہفتہ', 'cal.day': 'دن', 'cal.empty': 'اس دن کوئی آخری تاریخ یا یاد دہانی نہیں۔',
+      'notif.title': 'اطلاعات', 'notif.markAll': 'سب کو پڑھا ہوا کریں', 'notif.empty': 'کوئی نئی اطلاع نہیں۔', 'notif.prefs': 'اطلاعات کی ترجیحات',
+      'notif.push': 'پش اطلاعات', 'notif.email': 'ای میل', 'notif.sms': 'ایس ایم ایس', 'notif.whatsapp': 'واٹس ایپ',
+      'notif.channelsNote': 'ایس ایم ایس اور واٹس ایپ سروس ترتیب دیے جانے کے بعد ہی کام کریں گے۔',
+      'compare.title': 'موازنہ', 'compare.empty': 'موازنے کے لیے 2 سے 4 مواقع شامل کریں۔', 'compare.added': 'موازنے میں شامل', 'compare.full': 'ایک وقت میں زیادہ سے زیادہ 4',
+      'compare.save': 'موازنہ محفوظ کریں', 'compare.clear': 'صاف کریں',
+      'tools.title': 'ٹولز', 'tools.cv': 'سی وی بنائیں', 'tools.cover': 'کور لیٹر', 'tools.guides': 'رہنمائی', 'tools.interview': 'انٹرویو کی مشق',
+      'tools.readiness': 'درخواست کی تیاری', 'tools.exportPdf': 'پی ڈی ایف بنائیں', 'tools.checklist': 'درخواست کی فہرست',
+      'settings.title': 'سیٹنگز', 'settings.language': 'زبان', 'settings.theme': 'تھیم', 'settings.themeSystem': 'سسٹم', 'settings.themeLight': 'روشن', 'settings.themeDark': 'تاریک',
+      'settings.textSize': 'تحریر کا سائز', 'settings.highContrast': 'زیادہ کنٹراسٹ', 'settings.simpleMode': 'آسان موڈ', 'settings.lowData': 'کم ڈیٹا موڈ',
+      'settings.reduceMotion': 'کم حرکت', 'settings.privacy': 'رازداری', 'settings.downloadData': 'میرا ڈیٹا ڈاؤن لوڈ کریں', 'settings.deleteAccount': 'اکاؤنٹ حذف کریں',
+      'settings.deleteConfirm': 'یہ آپ کا اکاؤنٹ، دستاویزات اور ریکارڈ مستقل طور پر حذف کر دے گا۔ تصدیق کے لیے DELETE لکھیں۔',
+      'settings.changePassword': 'پاس ورڈ تبدیل کریں', 'settings.terms': 'شرائط و ضوابط', 'settings.privacyPolicy': 'پرائیویسی پالیسی', 'settings.help': 'مدد',
+      'settings.feedback': 'رائے دیں', 'settings.reportIssue': 'تکنیکی مسئلہ رپورٹ کریں', 'settings.about': 'موقع کے بارے میں', 'settings.version': 'ورژن {v}',
+      'settings.accessibility': 'رسائی', 'settings.recPrefs': 'تجاویز کی ترجیحات', 'settings.verifiedOnly': 'صرف تصدیق شدہ مواقع دکھائیں', 'settings.hideDemo': 'ڈیمو مواقع چھپائیں',
+      'report.title': 'اس موقع کی رپورٹ کریں', 'report.sent': 'شکریہ۔ ہماری ٹیم اس کا جائزہ لے گی۔', 'report.details': 'آپ نے کیا دیکھا؟',
+      'community.title': 'کمیونٹی', 'community.stories': 'کامیابی کی کہانیاں', 'community.share': 'اپنی کہانی شیئر کریں', 'community.mentors': 'رہنما',
+      'community.pending': 'جمع ہو گئی — جائزے کے بعد شائع ہو گی۔', 'community.reportStory': 'کہانی رپورٹ کریں',
+    },
+  };
+}
+
+class _SDelegate extends LocalizationsDelegate<S> {
+  const _SDelegate();
+  @override
+  bool isSupported(Locale locale) => S.supportedLocales.any((l) => l.languageCode == locale.languageCode);
+  @override
+  Future<S> load(Locale locale) async => S(locale);
+  @override
+  bool shouldReload(_SDelegate old) => false;
+}
+
+extension Tr on BuildContext {
+  String t(String key, [Map<String, Object?> args = const {}]) => S.of(this).t(key, args);
+  bool get isUrdu => S.of(this).isUrdu;
+}

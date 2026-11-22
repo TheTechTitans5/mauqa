@@ -1,0 +1,10 @@
+{
+  "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
+  "SUPABASE_ANON_KEY": "YOUR-ANON-KEY",
+  "AUTH_REDIRECT": "io.mauqa.app://login-callback",
+  "GOOGLE_SIGN_IN_ENABLED": false,
+  "FIREBASE_API_KEY": "",
+  "FIREBASE_APP_ID": "",
+  "FIREBASE_MESSAGING_SENDER_ID": "",
+  "FIREBASE_PROJECT_ID": ""
+}

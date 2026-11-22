@@ -1,0 +1,66 @@
+# Supabase CLI configuration for local development (`supabase start`) and deployment.
+project_id = "mauqa"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+enabled = true
+site_url = "io.mauqa.app://login-callback"
+additional_redirect_urls = ["io.mauqa.app://login-callback", "http://localhost:5173"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+
+[auth.sms]
+# Phone sign-up/OTP needs an SMS provider (Twilio, MessageBird, Vonage or Textlocal) configured in the dashboard.
+enable_signup = true
+enable_confirmations = true
+
+[auth.external.google]
+# Fill in from Google Cloud Console → Credentials → OAuth client (Web). Secrets go in .env, not here.
+enabled = false
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+# Cron-triggered functions authenticate with the x-cron-secret header instead of a user JWT.
+[functions.dispatch-notifications]
+verify_jwt = false
+
+[functions.source-sync]
+# Manual syncs still require an admin JWT (validated inside the function).
+verify_jwt = false
+
+[functions.eligibility-check]
+verify_jwt = true
+
+[functions.recommendations]
+verify_jwt = true
+
+[functions.account]
+verify_jwt = true
+
+[functions.api]
+verify_jwt = true
