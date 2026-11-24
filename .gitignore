@@ -1,5 +1,6 @@
 .env
 supabase/.env
+supabase/.temp/
 app/env/*.json
 !app/env/dev.example.json
 admin/config.js
