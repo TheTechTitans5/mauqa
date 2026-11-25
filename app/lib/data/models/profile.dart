@@ -210,10 +210,54 @@ class Certification {
 }
 
 class NamedItem {
-  NamedItem(this.id, this.name);
+  NamedItem(this.id, this.name, {this.category});
   final String id;
   final String name;
+
+  /// Skill group from `user_skills.category` (null for interests and for skills saved before groups existed).
+  final String? category;
 }
+
+/// Skill groups shown in Edit Profile, in display order (values of `user_skills.category`).
+const skillGroups = ['curricular', 'co_curricular', 'other'];
+
+/// The group a skill is shown in. Skills without a (known) group appear under "other".
+String skillGroupOf(NamedItem skill) {
+  final c = skill.category;
+  return (c != null && skillGroups.contains(c)) ? c : 'other';
+}
+
+/// Splits the flat skills list into the three groups, keeping the original order inside each group.
+Map<String, List<NamedItem>> groupSkills(List<NamedItem> skills) {
+  final out = <String, List<NamedItem>>{for (final g in skillGroups) g: <NamedItem>[]};
+  for (final s in skills) {
+    out[skillGroupOf(s)]!.add(s);
+  }
+  return out;
+}
+
+/// Finds an item by name, ignoring letter case and surrounding spaces — the same rule the database uses
+/// (unique on lower(name)), so one skill or interest can only be added once.
+NamedItem? findByName(List<NamedItem> items, String name) {
+  final key = name.trim().toLowerCase();
+  for (final i in items) {
+    if (i.name.trim().toLowerCase() == key) return i;
+  }
+  return null;
+}
+
+/// Interest options users can pick on the Home page (stored in `user_interests`, used by recommendations).
+const interestOptions = [
+  'scholarships',
+  'internships',
+  'jobs',
+  'fellowships',
+  'government_schemes',
+  'startup_funding',
+  'study_abroad',
+  'research_grants',
+  'free_training',
+];
 
 class Institution {
   Institution({required this.id, required this.name, this.shortName, this.city});

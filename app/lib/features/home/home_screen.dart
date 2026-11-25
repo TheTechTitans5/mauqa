@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/activity.dart';
 import '../../data/models/opportunity.dart';
+import '../../data/models/profile.dart' show NamedItem, findByName, interestOptions, pretty;
 import '../../data/repositories/content_repository.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/opportunity_repository.dart';
@@ -89,6 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+          const SliverToBoxAdapter(child: _InterestsPicker()),
           SliverToBoxAdapter(child: SectionHeader(context.t('home.forYou'), icon: Icons.auto_awesome_rounded, onSeeAll: () => context.go('/explore'))),
           _RecommendedList(),
           SliverToBoxAdapter(child: SectionHeader(context.t('home.closingSoon'), icon: Icons.timer_outlined,
@@ -292,6 +294,117 @@ class _RecommendedList extends ConsumerWidget {
                 ),
               ),
             ),
+    );
+  }
+}
+
+/// Interest picker on Home. This is where users choose interests (they are no longer edited in Edit Profile).
+/// Choices are saved to user_interests, which recommendations and "new match" notifications already read.
+class _InterestsPicker extends ConsumerStatefulWidget {
+  const _InterestsPicker();
+  @override
+  ConsumerState<_InterestsPicker> createState() => _InterestsPickerState();
+}
+
+class _InterestsPickerState extends ConsumerState<_InterestsPicker> {
+  final Set<String> _pending = {};
+
+  String _label(BuildContext context, String interest) {
+    final key = 'interest.$interest';
+    final translated = context.t(key);
+    return translated == key ? pretty(interest) : translated;
+  }
+
+  Future<void> _toggle(List<NamedItem> mine, String interest) async {
+    final key = interest.trim().toLowerCase();
+    if (key.isEmpty || _pending.contains(key)) return;
+    final existing = findByName(mine, interest);
+    final repo = ref.read(profileRepositoryProvider);
+    setState(() => _pending.add(key));
+    final ok = await runAction(
+        context,
+        () => existing == null
+            ? repo.addInterest(interest.trim())
+            : repo.removeInterest(existing.id));
+    if (!mounted) return;
+    setState(() => _pending.remove(key));
+    if (ok) {
+      ref.invalidate(fullProfileProvider); // also refreshes "Recommended for you"
+      ref.invalidate(homeSummaryProvider);
+    }
+  }
+
+  Future<void> _addCustom(List<NamedItem> mine) async {
+    var text = '';
+    final value = await showDialog<String>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text(context.t('profile.addInterest')),
+        content: TextField(
+          autofocus: true,
+          maxLength: 60,
+          onChanged: (v) => text = v,
+          onSubmitted: (v) => Navigator.pop(d, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(d),
+              child: Text(context.t('common.cancel'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(d, text),
+              child: Text(context.t('common.add'))),
+        ],
+      ),
+    );
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return;
+    if (!mounted) return;
+    if (findByName(mine, v) != null) {
+      return showSnack(context, context.t('common.alreadyAdded'));
+    }
+    await _toggle(mine, v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = ref.watch(fullProfileProvider).valueOrNull;
+    if (fp == null) return const SizedBox.shrink();
+    final mine = fp.interests;
+    final chosen = mine.map((i) => i.name.trim().toLowerCase()).toSet();
+    final custom = mine.where((i) => !interestOptions.contains(i.name.trim().toLowerCase())).toList();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: GlassCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.interests_outlined, color: AppColors.teal),
+            const SizedBox(width: 8),
+            Expanded(child: Text(context.t('home.interestsTitle'), style: Theme.of(context).textTheme.titleMedium)),
+          ]),
+          const SizedBox(height: 4),
+          Text(context.t('home.interestsHint'), style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, runSpacing: 6, children: [
+            for (final o in interestOptions)
+              FilterChip(
+                label: Text(_label(context, o)),
+                selected: chosen.contains(o),
+                onSelected: _pending.contains(o) ? null : (_) => _toggle(mine, o),
+              ),
+            for (final i in custom)
+              FilterChip(
+                label: Text(i.name),
+                selected: true,
+                onSelected: _pending.contains(i.name.trim().toLowerCase()) ? null : (_) => _toggle(mine, i.name),
+              ),
+            ActionChip(
+              avatar: const Icon(Icons.add_rounded, size: 18),
+              label: Text(context.t('profile.addInterest')),
+              onPressed: () => _addCustom(mine),
+            ),
+          ]),
+        ]),
+      ),
     );
   }
 }

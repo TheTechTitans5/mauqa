@@ -15,7 +15,7 @@ class ProfileRepository {
         final results = await Future.wait<dynamic>(<Future<dynamic>>[
           _c.from('profiles').select().eq('id', uid).single(),
           _c.from('education_records').select('*, institutions(name, short_name)').eq('user_id', uid).order('is_current', ascending: false),
-          _c.from('user_skills').select('id, skill').eq('user_id', uid).order('created_at'),
+          _loadSkills(uid),
           _c.from('user_interests').select('id, interest').eq('user_id', uid).order('created_at'),
           _c.from('user_experiences').select().eq('user_id', uid).order('start_date', ascending: false),
           _c.from('user_certifications').select().eq('user_id', uid).order('created_at', ascending: false),
@@ -24,7 +24,7 @@ class ProfileRepository {
         return FullProfile(
           profile: Profile.fromJson(results[0] as Map<String, dynamic>),
           education: (results[1] as List).map((e) => EducationRecord.fromJson(e as Map<String, dynamic>)).toList(),
-          skills: (results[2] as List).map((e) => NamedItem(e['id'] as String, e['skill'] as String)).toList(),
+          skills: results[2] as List<NamedItem>,
           interests: (results[3] as List).map((e) => NamedItem(e['id'] as String, e['interest'] as String)).toList(),
           experiences: (results[4] as List).map((e) => Experience.fromJson(e as Map<String, dynamic>)).toList(),
           certifications: (results[5] as List).map((e) => Certification.fromJson(e as Map<String, dynamic>)).toList(),
@@ -35,7 +35,7 @@ class ProfileRepository {
   /// Updates editable profile columns. Protected columns (roles, suspension, version) are enforced server-side.
   Future<void> updateProfile(Map<String, dynamic> patch) => guard(() async {
         const allowed = {
-          'full_name', 'phone', 'date_of_birth', 'gender', 'cnic', 'nationality', 'province', 'city', 'address', 'user_category',
+          'full_name', 'phone', 'date_of_birth', 'gender', 'cnic', 'nationality', 'province', 'city', 'user_category',
           'employment_status', 'languages', 'household_income_range', 'household_income_monthly_pkr', 'has_disability',
           'share_sensitive_for_eligibility', 'preferred_language', 'recommendation_prefs', 'privacy_settings', 'avatar_path',
         };
@@ -57,7 +57,38 @@ class ProfileRepository {
 
   Future<void> deleteEducation(String id) => guard(() => _c.from('education_records').delete().eq('id', id));
 
-  Future<void> addSkill(String skill) => guard(() => _c.from('user_skills').insert({'user_id': requireUserId(_c), 'skill': skill.trim()}));
+  /// Skills with their Edit Profile group. If migration 0013 (user_skills.category) has not been applied
+  /// yet, skills still load without groups (they all appear under "Other").
+  Future<List<NamedItem>> _loadSkills(String uid) async {
+    try {
+      final rows = await _c.from('user_skills').select('id, skill, category').eq('user_id', uid).order('created_at');
+      return rows.map((e) => NamedItem(e['id'] as String, e['skill'] as String, category: e['category'] as String?)).toList();
+    } on PostgrestException catch (e) {
+      if (!_missingCategoryColumn(e)) rethrow;
+      final rows = await _c.from('user_skills').select('id, skill').eq('user_id', uid).order('created_at');
+      return rows.map((e) => NamedItem(e['id'] as String, e['skill'] as String)).toList();
+    }
+  }
+
+  static bool _missingCategoryColumn(PostgrestException e) => e.code == '42703' || e.code == 'PGRST204';
+
+  /// Adds one skill to a group ('curricular', 'co_curricular' or 'other'). user_skills stays the single flat
+  /// list every other feature reads; the database rejects the same skill twice (case-insensitive).
+  Future<void> addSkill(String skill, {String? category}) => guard(() async {
+        final row = <String, String>{'user_id': requireUserId(_c), 'skill': skill.trim()};
+        if (category != null) row['category'] = category;
+        try {
+          await _c.from('user_skills').insert(row);
+        } on PostgrestException catch (e) {
+          if (category == null || !_missingCategoryColumn(e)) rethrow;
+          row.remove('category'); // migration 0013 not applied yet: save the skill without its group
+          await _c.from('user_skills').insert(row);
+        }
+      });
+
+  /// Moves an existing skill to another group (needs migration 0013).
+  Future<void> setSkillCategory(String id, String category) =>
+      guard(() => _c.from('user_skills').update({'category': category}).eq('id', id));
   Future<void> removeSkill(String id) => guard(() => _c.from('user_skills').delete().eq('id', id));
   Future<void> addInterest(String v) => guard(() => _c.from('user_interests').insert({'user_id': requireUserId(_c), 'interest': v.trim()}));
   Future<void> removeInterest(String id) => guard(() => _c.from('user_interests').delete().eq('id', id));
