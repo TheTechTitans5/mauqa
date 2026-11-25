@@ -55,18 +55,8 @@ class EditProfileScreen extends ConsumerWidget {
                   title: context.t('profile.skills'),
                   icon: Icons.psychology_outlined,
                   initiallyExpanded: section == 'skills',
-                  child: _TagEditor(
-                      items: p.skills,
-                      hint: context.t('profile.addSkill'),
-                      isSkill: true)),
-              _Section(
-                  title: context.t('profile.interests'),
-                  icon: Icons.interests_outlined,
-                  initiallyExpanded: section == 'interests',
-                  child: _TagEditor(
-                      items: p.interests,
-                      hint: context.t('profile.addInterest'),
-                      isSkill: false)),
+                  child: _SkillGroupsEditor(items: p.skills)),
+              // Interests are chosen on the Home page (see _InterestsPicker in home_screen.dart).
               _Section(
                   title: context.t('profile.experience'),
                   icon: Icons.work_outline,
@@ -133,13 +123,15 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
   late final _phone = TextEditingController(text: widget.p.phone);
   late final _cnic = TextEditingController(text: widget.p.cnic);
   late final _city = TextEditingController(text: widget.p.city);
-  late final _address = TextEditingController(text: widget.p.address);
   late final _nationality =
       TextEditingController(text: widget.p.nationality ?? 'Pakistani');
   late final _languages =
       TextEditingController(text: widget.p.languages.join(', '));
   late DateTime? _dob = widget.p.dateOfBirth;
-  late String? _gender = widget.p.gender;
+  // Gender is required. Older profiles may have no gender or "prefer_not_to_say"; they start empty here and
+  // are asked to choose one when they save. The database still accepts the old values.
+  static const _genders = ['female', 'male', 'transgender'];
+  late String? _gender = _genders.contains(widget.p.gender) ? widget.p.gender : null;
   late String? _province = widget.p.province;
   late String? _category = widget.p.userCategory;
   late String? _employment = widget.p.employmentStatus;
@@ -152,7 +144,6 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
       _phone,
       _cnic,
       _city,
-      _address,
       _nationality,
       _languages
     ]) {
@@ -167,11 +158,10 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
       _phone.text = widget.p.phone ?? '';
       _cnic.text = widget.p.cnic ?? '';
       _city.text = widget.p.city ?? '';
-      _address.text = widget.p.address ?? '';
       _nationality.text = widget.p.nationality ?? 'Pakistani';
       _languages.text = widget.p.languages.join(', ');
       _dob = widget.p.dateOfBirth;
-      _gender = widget.p.gender;
+      _gender = _genders.contains(widget.p.gender) ? widget.p.gender : null;
       _province = widget.p.province;
       _category = widget.p.userCategory;
       _employment = widget.p.employmentStatus;
@@ -239,17 +229,19 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
               });
           },
         ),
-        DropdownButtonFormField<String?>(
+        DropdownButtonFormField<String>(
+          key: const ValueKey('profile-gender'),
           value: _gender,
-          decoration: InputDecoration(labelText: context.t('profile.gender')),
-          items: const [
-            DropdownMenuItem(value: null, child: Text('—')),
-            DropdownMenuItem(value: 'female', child: Text('Female')),
-            DropdownMenuItem(value: 'male', child: Text('Male')),
-            DropdownMenuItem(value: 'transgender', child: Text('Transgender')),
-            DropdownMenuItem(
-                value: 'prefer_not_to_say', child: Text('Prefer not to say')),
+          decoration: InputDecoration(
+              labelText: context.t('profile.gender'),
+              helperText: context.t('profile.genderHelp'),
+              helperMaxLines: 2),
+          items: [
+            for (final g in _genders)
+              DropdownMenuItem(value: g, child: Text(context.t('gender.$g'))),
           ],
+          validator: (v) =>
+              v == null ? context.t('profile.genderRequired') : null,
           onChanged: (v) => setState(() => _gender = v),
         ),
         const SizedBox(height: 12),
@@ -297,15 +289,10 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
             decoration: InputDecoration(labelText: context.t('profile.city'))),
         const SizedBox(height: 12),
         TextFormField(
-            controller: _address,
-            decoration:
-                InputDecoration(labelText: context.t('profile.address'))),
-        const SizedBox(height: 12),
-        TextFormField(
             controller: _languages,
             decoration: InputDecoration(
                 labelText: context.t('profile.languages'),
-                hintText: 'Urdu, English, Punjabi')),
+                hintText: context.t('profile.languagesHint'))),
         const SizedBox(height: 12),
         TextFormField(
             controller: _cnic,
@@ -327,7 +314,13 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
               onPressed: _busy
                   ? null
                   : () async {
-                      if (!_form.currentState!.validate()) return;
+                      if (!_form.currentState!.validate()) {
+                        if (_gender == null) {
+                          showSnack(context, context.t('profile.genderRequired'),
+                              error: true);
+                        }
+                        return;
+                      }
                       setState(() => _busy = true);
                       final ok = await runAction(
                           context,
@@ -340,10 +333,9 @@ class _PersonalFormState extends ConsumerState<_PersonalForm> {
                                     : Validators.normalizePhone(_phone.text),
                                 'cnic': nn(_cnic.text),
                                 'city': nn(_city.text),
-                                'address': nn(_address.text),
                                 'nationality': nn(_nationality.text),
                                 'languages': _languages.text
-                                    .split(',')
+                                    .split(RegExp('[,،]')) // English or Urdu comma
                                     .map((e) => e.trim())
                                     .where((e) => e.isNotEmpty)
                                     .toList(),
@@ -457,41 +449,118 @@ class _SensitiveFormState extends ConsumerState<_SensitiveForm> {
   }
 }
 
-class _TagEditor extends ConsumerStatefulWidget {
-  const _TagEditor(
-      {required this.items, required this.hint, required this.isSkill});
-  final List<NamedItem> items;
-  final String hint;
-  final bool isSkill;
-  @override
-  ConsumerState<_TagEditor> createState() => _TagEditorState();
+/// Suggested skills for each group. Labels come from strings.dart (`skillopt.<key>`); the English label is
+/// what gets saved, because eligibility rules and recommendations compare English skill names.
+const _skillSuggestions = <String, List<String>>{
+  'curricular': [
+    'python',
+    'java',
+    'cpp',
+    'sql',
+    'javascript',
+    'flutter',
+    'web_dev',
+    'data_analysis',
+    'excel',
+    'mathematics',
+    'statistics',
+    'accounting',
+    'research_writing',
+    'lab_skills',
+  ],
+  'co_curricular': [
+    'public_speaking',
+    'debating',
+    'leadership',
+    'teamwork',
+    'event_management',
+    'society_management',
+    'mun',
+    'volunteering',
+    'sports',
+    'content_writing',
+    'photography',
+  ],
+  'other': [
+    'communication',
+    'problem_solving',
+    'time_management',
+    'graphic_design',
+    'social_media',
+    'urdu_writing',
+    'english_writing',
+    'teaching',
+    'customer_service',
+    'freelancing',
+  ],
+};
+
+final _english = S(const Locale('en'));
+
+String _skillGroupTitle(BuildContext context, String group) => context.t(
+    switch (group) {
+      'curricular' => 'profile.skillsCurricular',
+      'co_curricular' => 'profile.skillsCoCurricular',
+      _ => 'profile.skillsOther',
+    });
+
+/// Shows a saved skill in the current language when it is one of the suggestions; custom skills as typed.
+String _skillLabel(BuildContext context, String stored) {
+  final key = stored.trim().toLowerCase();
+  for (final group in _skillSuggestions.values) {
+    for (final k in group) {
+      if (_english.t('skillopt.$k').toLowerCase() == key) {
+        return context.t('skillopt.$k');
+      }
+    }
+  }
+  return stored;
 }
 
-class _TagEditorState extends ConsumerState<_TagEditor> {
+Future<void> _moveSkill(BuildContext context, WidgetRef ref, NamedItem skill,
+    String group) async {
+  final message =
+      context.t('profile.skillMoved', {'group': _skillGroupTitle(context, group)});
+  if (await runAction(
+      context,
+      () => ref
+          .read(profileRepositoryProvider)
+          .setSkillCategory(skill.id, group),
+      success: message)) {
+    _refreshAfterChange(ref);
+  }
+}
+
+/// Skills in three groups — Curricular, Co-curricular, Other — each with its own input and suggestions.
+/// All groups still save into the one flat user_skills list that the rest of the app reads.
+class _SkillGroupsEditor extends StatelessWidget {
+  const _SkillGroupsEditor({required this.items});
+  final List<NamedItem> items;
+
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(context.t('profile.skillsHint'),
+            style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 12),
+        for (final g in skillGroups) ...[
+          _SkillGroup(key: ValueKey('skill-group-$g'), group: g, all: items),
+          if (g != skillGroups.last) const Divider(height: 28),
+        ],
+      ]);
+}
+
+class _SkillGroup extends ConsumerStatefulWidget {
+  const _SkillGroup({super.key, required this.group, required this.all});
+  final String group;
+  final List<NamedItem> all;
+  @override
+  ConsumerState<_SkillGroup> createState() => _SkillGroupState();
+}
+
+class _SkillGroupState extends ConsumerState<_SkillGroup> {
   final _c = TextEditingController();
-  static const _skillSuggestions = [
-    'Python',
-    'SQL',
-    'Excel',
-    'JavaScript',
-    'Flutter',
-    'Communication',
-    'Data analysis',
-    'Graphic design',
-    'Urdu writing',
-    'Teaching'
-  ];
-  static const _interestSuggestions = [
-    'scholarships',
-    'internships',
-    'jobs',
-    'fellowships',
-    'government_schemes',
-    'startup_funding',
-    'study_abroad',
-    'research_grants',
-    'free_training'
-  ];
+  bool _busy = false;
 
   @override
   void dispose() {
@@ -499,57 +568,120 @@ class _TagEditorState extends ConsumerState<_TagEditor> {
     super.dispose();
   }
 
-  Future<void> _add(String v) async {
-    final t = v.trim();
-    if (t.isEmpty || t.length > 60) return;
-    if (widget.items.any((i) => i.name.toLowerCase() == t.toLowerCase()))
-      return showSnack(context, 'Already added');
-    final repo = ref.read(profileRepositoryProvider);
-    if (await runAction(context,
-        () => widget.isSkill ? repo.addSkill(t) : repo.addInterest(t))) {
+  Future<void> _add(String value) async {
+    final name = value.trim();
+    if (name.isEmpty || _busy) return;
+    if (name.length > 60) {
+      return showSnack(context, context.t('profile.skillTooLong'), error: true);
+    }
+    final existing = findByName(widget.all, name);
+    if (existing != null) {
+      _c.clear();
+      if (skillGroupOf(existing) == widget.group) {
+        return showSnack(context, context.t('common.alreadyAdded'));
+      }
+      // Typing a skill that is already in another group moves it here.
+      return _moveSkill(context, ref, existing, widget.group);
+    }
+    setState(() => _busy = true);
+    final ok = await runAction(
+        context,
+        () => ref
+            .read(profileRepositoryProvider)
+            .addSkill(name, category: widget.group));
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
       _c.clear();
       _refreshAfterChange(ref);
     }
   }
 
+  Future<void> _remove(NamedItem skill) async {
+    if (await runAction(context,
+        () => ref.read(profileRepositoryProvider).removeSkill(skill.id))) {
+      _refreshAfterChange(ref);
+    }
+  }
+
+  Future<void> _chooseGroup(NamedItem skill) async {
+    final target = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(context.t('profile.moveSkill'),
+                    style: Theme.of(sheet).textTheme.titleMedium),
+              ),
+              for (final g in skillGroups)
+                if (g != widget.group)
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz_rounded),
+                    title: Text(_skillGroupTitle(context, g)),
+                    onTap: () => Navigator.pop(sheet, g),
+                  ),
+            ]),
+      ),
+    );
+    if (target == null) return;
+    if (!mounted) return;
+    await _moveSkill(context, ref, skill, target);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final existing = widget.items.map((e) => e.name.toLowerCase()).toSet();
-    final suggestions =
-        (widget.isSkill ? _skillSuggestions : _interestSuggestions)
-            .where((s) => !existing.contains(s.toLowerCase()));
+    final mine = groupSkills(widget.all)[widget.group] ?? const <NamedItem>[];
+    final taken = widget.all.map((s) => s.name.trim().toLowerCase()).toSet();
+    final suggestions = (_skillSuggestions[widget.group] ?? const <String>[])
+        .where((k) => !taken.contains(_english.t('skillopt.$k').toLowerCase()))
+        .toList();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Wrap(spacing: 8, runSpacing: 6, children: [
-        for (final i in widget.items)
-          InputChip(
-            label: Text(widget.isSkill ? i.name : pretty(i.name)),
-            onDeleted: () async {
-              final repo = ref.read(profileRepositoryProvider);
-              if (await runAction(
-                  context,
-                  () => widget.isSkill
-                      ? repo.removeSkill(i.id)
-                      : repo.removeInterest(i.id))) _refreshAfterChange(ref);
-            },
-          ),
-      ]),
+      Text(_skillGroupTitle(context, widget.group),
+          style: Theme.of(context)
+              .textTheme
+              .titleSmall
+              ?.copyWith(color: AppColors.teal, fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
+      if (mine.isNotEmpty) ...[
+        Wrap(spacing: 8, runSpacing: 6, children: [
+          for (final s in mine)
+            InputChip(
+              label: Text(_skillLabel(context, s.name)),
+              tooltip: context.t('profile.moveSkill'),
+              onPressed: () => _chooseGroup(s),
+              onDeleted: () => _remove(s),
+            ),
+        ]),
+        const SizedBox(height: 8),
+      ],
       TextField(
+        key: ValueKey('skill-input-${widget.group}'),
         controller: _c,
+        maxLength: 60,
         decoration: InputDecoration(
-            hintText: widget.hint,
+            hintText: context.t('profile.addSkill'),
+            counterText: '',
             suffixIcon: IconButton(
+                tooltip: context.t('common.add'),
                 icon: const Icon(Icons.add_rounded),
-                onPressed: () => _add(_c.text))),
+                onPressed: _busy ? null : () => _add(_c.text))),
         onSubmitted: _add,
       ),
-      const SizedBox(height: 8),
-      Wrap(spacing: 6, children: [
-        for (final s in suggestions)
-          ActionChip(
-              label: Text(widget.isSkill ? s : pretty(s)),
-              onPressed: () => _add(s))
-      ]),
+      if (suggestions.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        Wrap(spacing: 6, runSpacing: 4, children: [
+          for (final k in suggestions)
+            ActionChip(
+                label: Text(context.t('skillopt.$k')),
+                onPressed:
+                    _busy ? null : () => _add(_english.t('skillopt.$k'))),
+        ]),
+      ],
     ]);
   }
 }

@@ -221,7 +221,7 @@ const EVALUATORS: Record<CriterionType, Evaluator> = {
     const hit = candidates.find((c) => fields.some((f) => textMatches(f, c)));
     return hit ? met(`Your field (${hit}) matches.`) : notMet(`Open to ${fields.join(', ')}.`);
   },
-  gender_in: (p, u) => listCheck(u.gender, asStrings(p.genders), 'gender', 'Gender (optional)'),
+  gender_in: (p, u) => listCheck(u.gender, asStrings(p.genders), 'gender', 'Gender'),
   province_in: (p, u) => listCheck(u.province, asStrings(p.provinces), 'province', 'Province'),
   city_in: (p, u) => listCheck(u.city, asStrings(p.cities), 'city', 'City'),
   nationality_in: (p, u) => listCheck(u.nationality, asStrings(p.nationalities), 'nationality', 'Nationality'),

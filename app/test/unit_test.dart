@@ -117,6 +117,38 @@ void main() {
     });
   });
 
+  group('Profile skills', () {
+    test('skills are split into three groups; ungrouped and unknown groups fall under Other', () {
+      final skills = [
+        NamedItem('1', 'Python', category: 'curricular'),
+        NamedItem('2', 'Debating', category: 'co_curricular'),
+        NamedItem('3', 'Teaching'), // saved before groups existed
+        NamedItem('4', 'Chess', category: 'something_else'),
+        NamedItem('5', 'SQL', category: 'curricular'),
+      ];
+      final g = groupSkills(skills);
+      expect(g.keys.toList(), skillGroups);
+      expect(g['curricular']!.map((s) => s.name).toList(), ['Python', 'SQL']);
+      expect(g['co_curricular']!.map((s) => s.name).toList(), ['Debating']);
+      expect(g['other']!.map((s) => s.name).toList(), ['Teaching', 'Chess']);
+      // every skill appears exactly once across the groups (the flat list stays complete)
+      expect(g.values.expand((l) => l).length, skills.length);
+      expect(groupSkills(const []).values.every((l) => l.isEmpty), isTrue);
+    });
+    test('duplicates are detected case-insensitively across all groups', () {
+      final skills = [NamedItem('1', 'Python', category: 'curricular'), NamedItem('2', ' Public speaking ', category: 'co_curricular')];
+      expect(findByName(skills, 'python')?.id, '1');
+      expect(findByName(skills, '  PYTHON ')?.id, '1');
+      expect(findByName(skills, 'public SPEAKING')?.id, '2');
+      expect(findByName(skills, 'Java'), isNull);
+      expect(skillGroupOf(findByName(skills, 'python')!), 'curricular');
+    });
+    test('interest options are stored as lower-case slugs', () {
+      expect(interestOptions, contains('scholarships'));
+      expect(interestOptions.every((o) => o == o.toLowerCase() && !o.contains(' ')), isTrue);
+    });
+  });
+
   group('Documents', () {
     test('validation of type and size', () {
       expect(DocumentRepository.validate('cv.pdf', 1000), isNull);
